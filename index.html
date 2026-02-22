@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RMIT Harvard Bibliography Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --rmit-red: #E60028;
+    --rmit-dark: #000054;
+    --rmit-navy: #001D3D;
+    --rmit-blue: #003566;
+    --rmit-light: #F4F4F8;
+    --rmit-white: #FFFFFF;
+    --rmit-grey: #6B7280;
+    --rmit-border: #D1D5DB;
+    --rmit-accent: #E60028;
+    --rmit-success: #059669;
+    --rmit-bg-warm: #FAFAF8;
+    --radius: 8px;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+    --shadow-md: 0 4px 16px rgba(0,0,0,0.10);
+    --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--rmit-bg-warm);
+    color: #1a1a2e;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  .app-header {
+    background: var(--rmit-dark);
+    background: linear-gradient(135deg, var(--rmit-dark) 0%, #000040 40%, var(--rmit-red) 100%);
+    color: white;
+    padding: 20px 24px;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+  .app-header h1 { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.3px; }
+  .app-header p { font-size: 0.78rem; opacity: 0.8; margin-top: 2px; }
+
+  .main-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px 20px 48px;
+  }
+
+  .source-selector {
+    background: var(--rmit-white);
+    border: 1px solid var(--rmit-border);
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+  }
+  .source-selector > label {
+    display: block;
+    font-weight: 600;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    color: var(--rmit-dark);
+  }
+  .source-selector select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid var(--rmit-border);
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
+    background: var(--rmit-white);
+    color: #1a1a2e;
+    cursor: pointer;
+    transition: border-color 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236B7280' stroke-width='2' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+  }
+  .source-selector select:focus { outline: none; border-color: var(--rmit-red); }
+
+  .form-card {
+    background: var(--rmit-white);
+    border: 1px solid var(--rmit-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-sm);
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .form-card h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--rmit-dark);
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .form-card h2 .badge {
+    background: var(--rmit-red);
+    color: white;
+    font-size: 0.6rem;
+    padding: 2px 7px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .form-card .form-subtitle {
+    font-size: 0.82rem;
+    color: var(--rmit-grey);
+    margin-bottom: 20px;
+  }
+
+  .field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 18px;
+  }
+  .field-grid .full-width { grid-column: 1 / -1; }
+  .field-group {
+    display: flex;
+    flex-direction: column;
+  }
+  .field-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+    letter-spacing: 0.2px;
+  }
+  .field-group label .optional {
+    font-weight: 400;
+    color: var(--rmit-grey);
+    font-size: 0.74rem;
+  }
+  .field-group input,
+  .field-group select {
+    padding: 9px 12px;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    background: #FAFBFC;
+  }
+  .field-group input:focus,
+  .field-group select:focus {
+    outline: none;
+    border-color: var(--rmit-red);
+    box-shadow: 0 0 0 3px rgba(230,0,40,0.08);
+    background: var(--rmit-white);
+  }
+  .field-group input::placeholder { color: #B0B5BE; }
+
+  /* ── Date Picker Row ── */
+  .date-picker-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 100px;
+    gap: 8px;
+  }
+  .date-picker-row select {
+    padding: 9px 6px;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.84rem;
+    background: #FAFBFC;
+    color: #1a1a2e;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%236B7280' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+  }
+  .date-picker-row select:focus {
+    outline: none;
+    border-color: var(--rmit-red);
+    box-shadow: 0 0 0 3px rgba(230,0,40,0.08);
+  }
+
+  .author-section { margin-bottom: 6px; }
+  .author-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 36px;
+    gap: 8px;
+    margin-bottom: 6px;
+    align-items: end;
+  }
+  .author-row .remove-btn {
+    width: 34px; height: 34px;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 6px;
+    background: white;
+    color: #9CA3AF;
+    font-size: 1.05rem;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .author-row .remove-btn:hover {
+    border-color: var(--rmit-red); color: var(--rmit-red); background: #FEF2F2;
+  }
+  .add-author-btn {
+    background: none;
+    border: 1.5px dashed #D1D5DB;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.78rem;
+    color: var(--rmit-blue);
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.15s;
+    margin-bottom: 12px;
+  }
+  .add-author-btn:hover { border-color: var(--rmit-blue); background: #F0F4FF; }
+
+  .btn-row { display: flex; gap: 10px; margin-top: 6px; flex-wrap: wrap; }
+  .btn-generate {
+    background: var(--rmit-red); color: white; border: none;
+    padding: 10px 28px; border-radius: 6px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: background 0.2s, transform 0.1s;
+  }
+  .btn-generate:hover { background: #C80022; }
+  .btn-generate:active { transform: scale(0.98); }
+  .btn-secondary {
+    background: var(--rmit-white); color: var(--rmit-dark);
+    border: 1.5px solid var(--rmit-border);
+    padding: 10px 20px; border-radius: 6px;
+    font-family: 'DM Sans', sans-serif; font-size: 0.88rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--rmit-dark); background: #F5F5FF; }
+
+  .output-section {
+    background: var(--rmit-white);
+    border: 1px solid var(--rmit-border);
+    border-radius: var(--radius);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    margin-top: 20px;
+  }
+  .output-section h2 { font-size: 1.05rem; font-weight: 700; color: var(--rmit-dark); margin-bottom: 3px; }
+  .output-subtitle { font-size: 0.82rem; color: var(--rmit-grey); margin-bottom: 16px; }
+  .reference-list { list-style: none; padding: 0; }
+  .reference-list li {
+    font-family: 'Source Serif 4', serif;
+    font-size: 0.92rem; line-height: 1.65;
+    padding: 12px 14px; padding-right: 70px;
+    background: #FAFBFC; border: 1px solid #EAECEF;
+    border-radius: 6px; margin-bottom: 8px;
+    position: relative; word-break: break-word;
+    animation: slideIn 0.25s ease;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .reference-list li .ref-actions {
+    position: absolute; top: 8px; right: 8px; display: flex; gap: 3px;
+  }
+  .ref-action-btn {
+    width: 26px; height: 26px;
+    border: 1px solid #E5E7EB; border-radius: 4px;
+    background: white; color: #9CA3AF; font-size: 0.72rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s;
+  }
+  .ref-action-btn:hover { color: var(--rmit-red); border-color: var(--rmit-red); }
+  .ref-action-btn.copied { color: var(--rmit-success); border-color: var(--rmit-success); }
+  .empty-state { text-align: center; padding: 32px 16px; color: #9CA3AF; font-size: 0.88rem; }
+  .empty-state .icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .copy-all-bar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+
+  .toast {
+    position: fixed; bottom: 16px; right: 16px;
+    background: var(--rmit-dark); color: white;
+    padding: 10px 20px; border-radius: 8px;
+    font-size: 0.84rem; font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    transform: translateY(80px); opacity: 0;
+    transition: all 0.3s ease; z-index: 100;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+
+  @media (max-width: 600px) {
+    .app-header { padding: 16px; }
+    .app-header h1 { font-size: 1rem; }
+    .main-container { padding: 14px 12px 36px; }
+    .form-card, .source-selector, .output-section { padding: 16px; }
+    .field-grid { grid-template-columns: 1fr; }
+    .author-row { grid-template-columns: 1fr 1fr 34px; }
+    .date-picker-row { grid-template-columns: 70px 1fr 90px; }
+    .btn-row { flex-direction: column; }
+    .btn-generate, .btn-secondary { width: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <h1>RMIT Harvard Bibliography Generator</h1>
+  <p>Generate reference list entries in RMIT Harvard style based on Easy Cite</p>
+</div>
+
+<div class="main-container">
+  <div class="source-selector">
+    <label for="sourceType">Select Source Type</label>
+    <select id="sourceType" onchange="renderForm()">
+      <option value="">— Choose a source type —</option>
+      <optgroup label="Books">
+        <option value="book">Book</option>
+        <option value="book-chapter">Book Chapter in an Edited Book</option>
+        <option value="edited-book">Edited Book</option>
+        <option value="ebook">E-book</option>
+      </optgroup>
+      <optgroup label="Journal Articles">
+        <option value="journal">Journal Article (Print)</option>
+        <option value="ejournal">e-Journal Article</option>
+      </optgroup>
+      <optgroup label="Newspapers &amp; Magazines">
+        <option value="newspaper-print">Newspaper / Magazine Article (Print)</option>
+        <option value="newspaper-database">Newspaper / Magazine Article (Database)</option>
+        <option value="newspaper-web">Newspaper / Magazine Article (Web)</option>
+      </optgroup>
+      <optgroup label="Web Sources">
+        <option value="webpage">Website / Webpage</option>
+        <option value="webpage-doc">Webpage Document (PDF)</option>
+      </optgroup>
+      <optgroup label="Reports">
+        <option value="gov-report">Government Report</option>
+        <option value="org-report">Organisation Report</option>
+        <option value="company-report-db">Company / Industry Report (Database)</option>
+        <option value="company-report-web">Company / Industry Report (Website)</option>
+      </optgroup>
+      <optgroup label="Other Sources">
+        <option value="conference-web">Conference Paper (Web)</option>
+        <option value="podcast">Podcast</option>
+        <option value="youtube">YouTube / Online Video</option>
+        <option value="social-media">Social Media Post</option>
+        <option value="thesis-web">Thesis / Dissertation (Web)</option>
+        <option value="legislation">Act of Parliament (Legislation)</option>
+        <option value="ai-generated">AI-Generated Content</option>
+      </optgroup>
+    </select>
+  </div>
+
+  <div id="formContainer"></div>
+
+  <div class="output-section">
+    <h2>Reference List</h2>
+    <p class="output-subtitle">Generated references appear here in alphabetical order. Copy button preserves <em>italics</em> when pasting into Word.</p>
+    <div id="outputActions" class="copy-all-bar" style="display:none;">
+      <button class="btn-secondary" onclick="copyAll()">&#128203; Copy All</button>
+      <button class="btn-secondary" onclick="clearAll()">&#10005; Clear All</button>
+    </div>
+    <ul class="reference-list" id="referenceList">
+      <li class="empty-state">
+        <div class="icon">&#128218;</div>
+        No references yet. Select a source type above to get started.
+      </li>
+    </ul>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let references = [];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+/* ═══════════════════════════════════════════
+   RICH TEXT COPY — preserves italics in Word
+   ═══════════════════════════════════════════ */
+function copyRichText(html, btn) {
+  const container = document.createElement('div');
+  container.style.position = 'fixed';
+  container.style.left = '-9999px';
+  container.style.top = '0';
+  container.style.opacity = '0';
+  container.style.fontFamily = 'Times New Roman, serif';
+  container.style.fontSize = '12pt';
+  container.innerHTML = html;
+  document.body.appendChild(container);
+
+  const range = document.createRange();
+  range.selectNodeContents(container);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+
+  try {
+    document.execCommand('copy');
+    if (btn) {
+      btn.classList.add('copied');
+      btn.innerHTML = '&#10003;';
+      setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '&#128203;'; }, 1500);
+    }
+    showToast('Copied with italics!');
+  } catch (e) {
+    navigator.clipboard.writeText(container.textContent).then(() => showToast('Copied (plain text fallback)'));
+  }
+
+  sel.removeAllRanges();
+  document.body.removeChild(container);
+}
+
+/* ═══════════════════════
+   DATE PICKER BUILDER
+   ═══════════════════════ */
+function buildDatePicker(fieldId, label, optional) {
+  const optLabel = optional ? ' <span class="optional">(optional)</span>' : '';
+
+  let dayOpts = '<option value="">Day</option>';
+  for (let i = 1; i <= 31; i++) {
+    const val = String(i).padStart(2, '0');
+    dayOpts += `<option value="${val}">${val}</option>`;
+  }
+
+  let monthOpts = '<option value="">Month</option>';
+  MONTHS.forEach(m => { monthOpts += `<option value="${m}">${m}</option>`; });
+
+  const curYear = new Date().getFullYear();
+  let yearOpts = '<option value="">Year</option>';
+  for (let y = curYear; y >= 1900; y--) {
+    yearOpts += `<option value="${y}">${y}</option>`;
+  }
+
+  return `<div class="field-group full-width">
+    <label>${label}${optLabel}</label>
+    <div class="date-picker-row">
+      <select id="${fieldId}-day">${dayOpts}</select>
+      <select id="${fieldId}-month">${monthOpts}</select>
+      <select id="${fieldId}-year">${yearOpts}</select>
+    </div>
+  </div>`;
+}
+
+function readDate(fieldId) {
+  const day = document.getElementById(fieldId + '-day')?.value || '';
+  const month = document.getElementById(fieldId + '-month')?.value || '';
+  const year = document.getElementById(fieldId + '-year')?.value || '';
+  if (day && month && year) return `${day} ${month} ${year}`;
+  if (month && year) return `${month} ${year}`;
+  if (year) return year;
+  return '';
+}
+
+/* ═══════════════════════
+   FORM DEFINITIONS
+   ═══════════════════════ */
+const FORMS = {
+  book: {
+    title: 'Book', subtitle: 'For a book with one or more authors.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year of Publication', placeholder: 'e.g. 2019', required: true },
+      { id: 'title', label: 'Title of Book', placeholder: 'e.g. An introduction to accounting', required: true, full: true },
+      { id: 'edition', label: 'Edition', placeholder: 'e.g. 2nd (blank if 1st)', optional: true },
+      { id: 'publisher', label: 'Publisher', placeholder: 'e.g. Cengage Learning Australia', required: true },
+      { id: 'doi', label: 'DOI', placeholder: 'e.g. 10.1234/example', optional: true },
+      { id: 'place', label: 'Place of Publication', placeholder: 'e.g. Southbank (if no DOI)', optional: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>`;
+      if (d.edition) r += `, ${d.edition} edn`;
+      r += `, ${d.publisher}`;
+      if (d.doi) r += `, doi:${d.doi}`; else if (d.place) r += `, ${d.place}`;
+      return r + '.';
+    }
+  },
+  'book-chapter': {
+    title: 'Book Chapter in an Edited Book', subtitle: 'A chapter by author(s) in an edited book.',
+    fields: [
+      { type: 'authors', label: 'Chapter Author(s)' },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2021', required: true },
+      { id: 'chapterTitle', label: 'Chapter Title', placeholder: '', required: true, full: true },
+      { type: 'editors' },
+      { id: 'bookTitle', label: 'Book Title', placeholder: '', required: true, full: true },
+      { id: 'edition', label: 'Edition', placeholder: 'e.g. 2nd', optional: true },
+      { id: 'publisher', label: 'Publisher', placeholder: '', required: true },
+      { id: 'doi', label: 'DOI', placeholder: '', optional: true },
+      { id: 'place', label: 'Place of Publication', placeholder: 'If no DOI', optional: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) \u2018${d.chapterTitle}\u2019, in ${fmtEd(d.editors)} <em>${d.bookTitle}</em>`;
+      if (d.edition) r += `, ${d.edition} edn`;
+      r += `, ${d.publisher}`;
+      if (d.doi) r += `, doi:${d.doi}`; else if (d.place) r += `, ${d.place}`;
+      return r + '.';
+    }
+  },
+  'edited-book': {
+    title: 'Edited Book', subtitle: 'A book compiled by editor(s).',
+    fields: [
+      { type: 'editors' },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2019', required: true },
+      { id: 'title', label: 'Book Title', placeholder: '', required: true, full: true },
+      { id: 'edition', label: 'Edition', placeholder: 'e.g. 6th', optional: true },
+      { id: 'publisher', label: 'Publisher', placeholder: '', required: true },
+      { id: 'doi', label: 'DOI', placeholder: '', optional: true },
+      { id: 'place', label: 'Place of Publication', placeholder: 'If no DOI', optional: true },
+    ],
+    generate: (d) => {
+      const el = d.editors.length > 1 ? '(eds)' : '(ed)';
+      let r = `${fmtA(d.editors)} ${el} (${d.year}) <em>${d.title}</em>`;
+      if (d.edition) r += `, ${d.edition} edn`;
+      r += `, ${d.publisher}`;
+      if (d.doi) r += `, doi:${d.doi}`; else if (d.place) r += `, ${d.place}`;
+      return r + '.';
+    }
+  },
+  ebook: {
+    title: 'E-book', subtitle: 'Online books from databases or websites.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2020', required: true },
+      { id: 'title', label: 'Book Title', placeholder: '', required: true, full: true },
+      { id: 'edition', label: 'Edition', placeholder: '', optional: true },
+      { id: 'publisher', label: 'Publisher', placeholder: '', required: true },
+      { id: 'doi', label: 'DOI', placeholder: '', optional: true },
+      { id: 'place', label: 'Place of Publication', placeholder: 'If no DOI', optional: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>`;
+      if (d.edition) r += `, ${d.edition} edn`;
+      r += `, ${d.publisher}`;
+      if (d.doi) r += `, doi:${d.doi}`; else if (d.place) r += `, ${d.place}`;
+      return r + '.';
+    }
+  },
+  journal: {
+    title: 'Journal Article (Print)', subtitle: 'From hardcopy (print) journals.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2021', required: true },
+      { id: 'articleTitle', label: 'Article Title', placeholder: '', required: true, full: true },
+      { id: 'journalTitle', label: 'Journal Title', placeholder: '', required: true, full: true },
+      { id: 'volume', label: 'Volume', placeholder: 'e.g. 32' },
+      { id: 'issue', label: 'Issue', placeholder: 'e.g. 11', optional: true },
+      { id: 'pages', label: 'Page Range', placeholder: 'e.g. 590-620', required: true },
+      { id: 'doi', label: 'DOI', placeholder: '', optional: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) \u2018${d.articleTitle}\u2019, <em>${d.journalTitle}</em>`;
+      if (d.volume) { r += `, ${d.volume}`; if (d.issue) r += `(${d.issue})`; r += `:${d.pages}`; }
+      if (d.doi) r += `, doi:${d.doi}`;
+      return r + '.';
+    }
+  },
+  ejournal: {
+    title: 'e-Journal Article', subtitle: 'Online journal articles from databases or websites.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2021', required: true },
+      { id: 'articleTitle', label: 'Article Title', placeholder: '', required: true, full: true },
+      { id: 'journalTitle', label: 'Journal Title', placeholder: '', required: true, full: true },
+      { id: 'volume', label: 'Volume', placeholder: '' },
+      { id: 'issue', label: 'Issue', placeholder: '', optional: true },
+      { id: 'pages', label: 'Page Range', placeholder: '', required: true },
+      { id: 'doi', label: 'DOI', placeholder: '', optional: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', optional: true },
+      { id: 'source', label: 'Database or Website Name', placeholder: '', optional: true },
+      { id: 'url', label: 'URL', placeholder: 'If from website (no DOI)', optional: true, full: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) \u2018${d.articleTitle}\u2019, <em>${d.journalTitle}</em>`;
+      if (d.volume) { r += `, ${d.volume}`; if (d.issue) r += `(${d.issue})`; r += `:${d.pages}`; }
+      if (d.doi) { r += `, doi:${d.doi}.`; }
+      else if (d.url && d.accessDate) { r += `, ${d.source ? d.source + ' website, ' : ''}accessed ${d.accessDate}. ${d.url}`; }
+      else if (d.source && d.accessDate) { r += `, accessed ${d.accessDate}, ${d.source} database.`; }
+      else { r += '.'; }
+      return r;
+    }
+  },
+  'newspaper-print': {
+    title: 'Newspaper / Magazine Article (Print)', subtitle: 'In hardcopy (print) format.',
+    fields: [
+      { type: 'authors' },
+      { type: 'date', id: 'fullDate', label: 'Publication Date', required: true },
+      { id: 'articleTitle', label: 'Article Title', placeholder: '', required: true, full: true },
+      { id: 'newspaperTitle', label: 'Newspaper / Magazine', placeholder: 'e.g. The Age', required: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.fullDate}) \u2018${d.articleTitle}\u2019, <em>${d.newspaperTitle}</em>.`
+  },
+  'newspaper-database': {
+    title: 'Newspaper / Magazine Article (Database)', subtitle: 'From a library database.',
+    fields: [
+      { type: 'authors' },
+      { type: 'date', id: 'fullDate', label: 'Publication Date', required: true },
+      { id: 'articleTitle', label: 'Article Title', placeholder: '', required: true, full: true },
+      { id: 'newspaperTitle', label: 'Newspaper / Magazine', placeholder: '', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'database', label: 'Database Name', placeholder: 'e.g. Factiva', required: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.fullDate}) \u2018${d.articleTitle}\u2019, <em>${d.newspaperTitle}</em>, accessed ${d.accessDate}, ${d.database} database.`
+  },
+  'newspaper-web': {
+    title: 'Newspaper / Magazine Article (Web)', subtitle: 'From a webpage.',
+    fields: [
+      { type: 'authors' },
+      { type: 'date', id: 'fullDate', label: 'Publication Date', required: true },
+      { id: 'articleTitle', label: 'Article Title', placeholder: '', required: true, full: true },
+      { id: 'newspaperTitle', label: 'Newspaper / Magazine', placeholder: '', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.fullDate}) \u2018${d.articleTitle}\u2019, <em>${d.newspaperTitle}</em>, accessed ${d.accessDate}. ${d.url}`
+  },
+  webpage: {
+    title: 'Website / Webpage', subtitle: 'Content from a specific webpage.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2021 or n.d.', required: true },
+      { id: 'title', label: 'Webpage Title', placeholder: '', required: true, full: true },
+      { id: 'websiteName', label: 'Website Name', placeholder: 'e.g. ZDNet', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.year}) ${d.title}, ${d.websiteName} website, accessed ${d.accessDate}. ${d.url}`
+  },
+  'webpage-doc': {
+    title: 'Webpage Document (PDF)', subtitle: 'Downloadable documents from a webpage.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: '', required: true },
+      { id: 'title', label: 'Document Title', placeholder: '', required: true, full: true },
+      { id: 'websiteName', label: 'Website Name', placeholder: '', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>, ${d.websiteName} website, accessed ${d.accessDate}. ${d.url}`
+  },
+  'gov-report': {
+    title: 'Government Report', subtitle: 'Departmental reports, commissions, committees.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: '', required: true },
+      { id: 'title', label: 'Report Title', placeholder: '', required: true, full: true },
+      { id: 'reportNumber', label: 'Report Number', placeholder: 'If available', optional: true },
+      { id: 'agency', label: 'Government Agency', placeholder: '', required: true },
+      { id: 'government', label: 'Government', placeholder: 'e.g. Australian Government', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>`;
+      if (d.reportNumber) r += `, report number ${d.reportNumber}`;
+      return r + `, ${d.agency}, ${d.government}, accessed ${d.accessDate}. ${d.url}`;
+    }
+  },
+  'org-report': {
+    title: 'Organisation Report', subtitle: 'Annual reports, research reports.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: '', required: true },
+      { id: 'title', label: 'Report Title', placeholder: '', required: true, full: true },
+      { id: 'websiteName', label: 'Website Name', placeholder: '', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>, ${d.websiteName} website, accessed ${d.accessDate}. ${d.url}`
+  },
+  'company-report-db': {
+    title: 'Company / Industry Report (Database)', subtitle: 'From a library database.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: '', required: true },
+      { id: 'title', label: 'Report Title', placeholder: '', required: true, full: true },
+      { id: 'reportNumber', label: 'Report Number', placeholder: 'If available', optional: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'database', label: 'Database Name', placeholder: 'e.g. IBISWorld', required: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>`;
+      if (d.reportNumber) r += `, report number ${d.reportNumber}`;
+      return r + `, accessed ${d.accessDate}, ${d.database} database.`;
+    }
+  },
+  'company-report-web': {
+    title: 'Company / Industry Report (Website)', subtitle: 'From a company or organisation website.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: '', required: true },
+      { id: 'title', label: 'Report Title', placeholder: '', required: true, full: true },
+      { id: 'reportNumber', label: 'Report Number', placeholder: 'If available', optional: true },
+      { id: 'websiteName', label: 'Website Name', placeholder: '', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => {
+      let r = `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em>`;
+      if (d.reportNumber) r += `, report number ${d.reportNumber}`;
+      return r + `, ${d.websiteName} website, accessed ${d.accessDate}. ${d.url}`;
+    }
+  },
+  'conference-web': {
+    title: 'Conference Paper (Web)', subtitle: 'Published conference paper from a webpage.',
+    fields: [
+      { type: 'authors' },
+      { type: 'date', id: 'confDate', label: 'Conference Date', required: true },
+      { id: 'paperTitle', label: 'Paper Title', placeholder: '', required: true, full: true },
+      { id: 'confName', label: 'Conference Name', placeholder: '', required: true, full: true },
+      { id: 'confPlace', label: 'Place of Conference', placeholder: 'e.g. Atlanta', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.confDate}) \u2018${d.paperTitle}\u2019 [conference presentation], <em>${d.confName}</em>, ${d.confPlace}, accessed ${d.accessDate}. ${d.url}`
+  },
+  podcast: {
+    title: 'Podcast', subtitle: 'For podcast episodes.',
+    fields: [
+      { type: 'authors', label: 'Host(s)' },
+      { id: 'producerName', label: 'Producer Name', placeholder: 'Person or organisation', required: true },
+      { type: 'date', id: 'fullDate', label: 'Publication Date', required: true },
+      { id: 'episodeTitle', label: 'Episode Title', placeholder: '', required: true, full: true },
+      { id: 'seriesName', label: 'Podcast Series', placeholder: '', required: true },
+      { id: 'network', label: 'Network', placeholder: 'e.g. ABC', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => {
+      const hl = d.authors.length > 1 ? '(hosts)' : '(host)';
+      return `${fmtA(d.authors)} ${hl} and ${d.producerName} (producer) (${d.fullDate}) \u2018${d.episodeTitle}\u2019 [podcast], <em>${d.seriesName}</em>, ${d.network}, accessed ${d.accessDate}. ${d.url}`;
+    }
+  },
+  youtube: {
+    title: 'YouTube / Online Video', subtitle: 'YouTube and other streaming videos.',
+    fields: [
+      { type: 'authors', label: 'Creator / Channel' },
+      { type: 'date', id: 'fullDate', label: 'Publication Date', required: true },
+      { id: 'videoTitle', label: 'Video Title', placeholder: '', required: true, full: true },
+      { id: 'channelName', label: 'Channel / Organisation', placeholder: '', required: true },
+      { id: 'websiteName', label: 'Website Name', placeholder: 'e.g. YouTube', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.fullDate}) \u2018${d.videoTitle}\u2019 [video], <em>${d.channelName}</em>, ${d.websiteName} website, accessed ${d.accessDate}. ${d.url}`
+  },
+  'social-media': {
+    title: 'Social Media Post', subtitle: 'Publicly accessible posts (Facebook, X, Instagram, etc.).',
+    fields: [
+      { type: 'authors', label: 'Author / Page' },
+      { type: 'date', id: 'fullDate', label: 'Publication Date', required: true },
+      { id: 'postTitle', label: 'Title or First 10 Words...', placeholder: '', required: true, full: true },
+      { id: 'postType', label: 'Post Type', placeholder: 'e.g. Tweet, Instagram post', required: true },
+      { id: 'pageName', label: 'Page Name', placeholder: '', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.fullDate}) \u2018${d.postTitle}\u2019 [${d.postType}], ${d.pageName}, accessed ${d.accessDate}. ${d.url}`
+  },
+  'thesis-web': {
+    title: 'Thesis / Dissertation (Web)', subtitle: 'From an institutional repository or website.',
+    fields: [
+      { type: 'authors' },
+      { id: 'year', label: 'Year', placeholder: '', required: true },
+      { id: 'title', label: 'Thesis Title', placeholder: '', required: true, full: true },
+      { id: 'thesisType', label: 'Type', placeholder: "e.g. master's thesis, PhD dissertation", required: true },
+      { id: 'university', label: 'University', placeholder: 'e.g. RMIT University', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+    ],
+    generate: (d) => `${fmtA(d.authors)} (${d.year}) <em>${d.title}</em> [${d.thesisType}], ${d.university}, accessed ${d.accessDate}. ${d.url}`
+  },
+  legislation: {
+    title: 'Act of Parliament (Legislation)', subtitle: 'Australian federal and state legislation.',
+    fields: [
+      { id: 'actTitle', label: 'Title of Act', placeholder: 'e.g. Child Wellbeing and Safety Act', required: true, full: true },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2005', required: true },
+      { id: 'jurisdiction', label: 'Jurisdiction', placeholder: 'e.g. Vic, Cth, NSW', required: true },
+    ],
+    generate: (d) => `<em>${d.actTitle} ${d.year}</em> (${d.jurisdiction}).`
+  },
+  'ai-generated': {
+    title: 'AI-Generated Content', subtitle: 'Content from AI tools (ChatGPT, Copilot, Val, etc.).',
+    fields: [
+      { id: 'creator', label: 'Creator / Company', placeholder: 'e.g. OpenAI', required: true },
+      { id: 'year', label: 'Year', placeholder: 'e.g. 2026', required: true },
+      { id: 'toolName', label: 'AI Tool Name', placeholder: 'e.g. ChatGPT', required: true },
+      { id: 'format', label: 'Format', placeholder: 'e.g. Large language model', required: true },
+      { type: 'date', id: 'accessDate', label: 'Accessed Date', required: true },
+      { id: 'url', label: 'URL', placeholder: 'https://...', required: true, full: true },
+      { id: 'appendix', label: 'Appendix Reference', placeholder: 'e.g. See Appendix A for prompt and output', optional: true, full: true },
+    ],
+    generate: (d) => {
+      let r = `${d.creator} (${d.year}) ${d.toolName} [${d.format}], accessed ${d.accessDate}. ${d.url}`;
+      if (d.appendix) r += `. ${d.appendix}`;
+      return r;
+    }
+  },
+};
+
+/* ═══════════════════════
+   AUTHOR FORMATTING
+   ═══════════════════════ */
+function fmtA(a) {
+  if (!a || !a.length) return '';
+  const f = a.map(x => `${x.family} ${x.given}`);
+  if (f.length === 1) return f[0];
+  if (f.length === 2) return `${f[0]} and ${f[1]}`;
+  return f.slice(0,-1).join(', ') + ' and ' + f[f.length-1];
+}
+function fmtEd(e) {
+  if (!e || !e.length) return '';
+  const f = e.map(x => `${x.family} ${x.given}`);
+  const l = e.length > 1 ? '(eds)' : '(ed)';
+  if (f.length === 1) return `${f[0]} ${l}`;
+  if (f.length === 2) return `${f[0]} and ${f[1]} ${l}`;
+  return f.slice(0,-1).join(', ') + ' and ' + f[f.length-1] + ' ' + l;
+}
+
+/* ═══════════════════════
+   RENDER FORM
+   ═══════════════════════ */
+function renderForm() {
+  const type = document.getElementById('sourceType').value;
+  const c = document.getElementById('formContainer');
+  if (!type || !FORMS[type]) { c.innerHTML = ''; return; }
+  const def = FORMS[type];
+  let h = `<div class="form-card"><h2>${def.title} <span class="badge">RMIT Harvard</span></h2><p class="form-subtitle">${def.subtitle}</p><div class="field-grid">`;
+
+  for (const f of def.fields) {
+    if (f.type === 'authors' || f.type === 'editors') {
+      const label = f.label || (f.type === 'editors' ? 'Editor(s)' : 'Author(s)');
+      const dt = f.type;
+      h += `<div class="full-width author-section"><label>${label}</label><div id="${dt}Rows"><div class="author-row"><div class="field-group"><label>Family Name</label><input type="text" class="${dt}-family" placeholder="e.g. Smith"></div><div class="field-group"><label>Initial(s)</label><input type="text" class="${dt}-given" placeholder="e.g. J"></div><div style="height:34px"></div></div></div><button type="button" class="add-author-btn" onclick="addRow('${dt}')">+ Add another ${f.type === 'editors' ? 'editor' : 'author'}</button></div>`;
+    } else if (f.type === 'date') {
+      h += buildDatePicker(f.id, f.label, f.optional);
+    } else {
+      const cls = f.full ? 'full-width' : '';
+      const opt = f.optional ? ' <span class="optional">(optional)</span>' : '';
+      h += `<div class="field-group ${cls}"><label for="field-${f.id}">${f.label}${opt}</label><input type="text" id="field-${f.id}" placeholder="${f.placeholder || ''}"></div>`;
+    }
+  }
+
+  h += `</div><div class="btn-row" style="margin-top:20px"><button class="btn-generate" onclick="gen('${type}')">Generate Reference</button><button class="btn-secondary" onclick="renderForm()">Clear Form</button></div></div>`;
+  c.innerHTML = h;
+}
+
+function addRow(type) {
+  const c = document.getElementById(type + 'Rows');
+  const r = document.createElement('div');
+  r.className = 'author-row';
+  r.innerHTML = `<div class="field-group"><input type="text" class="${type}-family" placeholder="Family name"></div><div class="field-group"><input type="text" class="${type}-given" placeholder="Initial(s)"></div><button type="button" class="remove-btn" onclick="this.parentElement.remove()">&times;</button>`;
+  c.appendChild(r);
+}
+
+/* ═══════════════════════
+   GENERATE REFERENCE
+   ═══════════════════════ */
+function gen(type) {
+  const def = FORMS[type];
+  const data = {};
+  for (const f of def.fields) {
+    if (f.type === 'authors' || f.type === 'editors') {
+      const fams = document.querySelectorAll(`.${f.type}-family`);
+      const givs = document.querySelectorAll(`.${f.type}-given`);
+      const p = [];
+      fams.forEach((el, i) => { const fm = el.value.trim(); const gv = givs[i] ? givs[i].value.trim() : ''; if (fm) p.push({ family: fm, given: gv }); });
+      data[f.type] = p;
+    } else if (f.type === 'date') {
+      data[f.id] = readDate(f.id);
+    } else {
+      data[f.id] = document.getElementById('field-' + f.id)?.value.trim() || '';
+    }
+  }
+  if (type !== 'legislation' && type !== 'ai-generated') {
+    if (!data.authors || !data.authors.length || !data.authors[0].family) { showToast('Please enter at least one author.'); return; }
+  }
+  references.push(def.generate(data));
+  renderRefs();
+  showToast('Reference added!');
+}
+
+/* ═══════════════════════
+   RENDER REFERENCE LIST
+   ═══════════════════════ */
+function renderRefs() {
+  const list = document.getElementById('referenceList');
+  const acts = document.getElementById('outputActions');
+  if (!references.length) {
+    list.innerHTML = '<li class="empty-state"><div class="icon">&#128218;</div>No references yet.</li>';
+    acts.style.display = 'none'; return;
+  }
+  acts.style.display = 'flex';
+  const sorted = references.map((r,i) => ({html:r, idx:i}));
+  sorted.sort((a,b) => a.html.replace(/<[^>]*>/g,'').toLowerCase().localeCompare(b.html.replace(/<[^>]*>/g,'').toLowerCase()));
+  list.innerHTML = sorted.map(item => `<li>${item.html}<span class="ref-actions"><button class="ref-action-btn" onclick="copySingle(this,${item.idx})" title="Copy with italics">&#128203;</button><button class="ref-action-btn" onclick="removeRef(${item.idx})" title="Remove">&times;</button></span></li>`).join('');
+}
+
+/* ═══════════════════════
+   COPY / REMOVE / CLEAR
+   ═══════════════════════ */
+function copySingle(btn, idx) { copyRichText(references[idx], btn); }
+function removeRef(idx) { references.splice(idx,1); renderRefs(); showToast('Removed.'); }
+function copyAll() {
+  const s = [...references].sort((a,b) => a.replace(/<[^>]*>/g,'').toLowerCase().localeCompare(b.replace(/<[^>]*>/g,'').toLowerCase()));
+  copyRichText(s.map(r => `<p style="font-family:Times New Roman,serif;font-size:12pt;">${r}</p>`).join(''), null);
+}
+function clearAll() { if(confirm('Clear all references?')){references=[];renderRefs();showToast('Cleared.');} }
+</script>
+</body>
+</html>
